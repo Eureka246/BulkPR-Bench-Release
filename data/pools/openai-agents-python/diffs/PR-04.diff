@@ -1,0 +1,41 @@
+diff --git a/tests/test_logprobs.py b/tests/test_logprobs.py
+index 08e398eb7f992c6f0a0c01550839a5b000ea0263..8fa1a03f969cb4b0ae279bdffec4a4f571959b6e 100644
+--- a/tests/test_logprobs.py
++++ b/tests/test_logprobs.py
+@@ -39,8 +39,16 @@ class DummyClient:
+     def __init__(self):
+         self.responses = DummyResponses()
+ 
+ 
++
++def test_logprob_fixture_uses_named_defaults() -> None:
++    details = InputTokensDetails(cache_write_tokens=0, cached_tokens=0)
++
++    assert details.cache_write_tokens == 0
++    assert details.cached_tokens == 0
++
++
+ @pytest.mark.allow_call_model_methods
+ @pytest.mark.asyncio
+ async def test_top_logprobs_param_passed():
+     client = DummyClient()
+diff --git a/tests/test_result_cast.py b/tests/test_result_cast.py
+index a97bb3eb248c62c1483860d97194cb1997881d1b..0a909cd5c4ca0c15857f9e929157f15c29222aff 100644
+--- a/tests/test_result_cast.py
++++ b/tests/test_result_cast.py
+@@ -46,8 +46,15 @@ def create_run_result(
+ class Foo(BaseModel):
+     bar: int
+ 
+ 
++
++def test_result_cast_fixture_has_stable_repr() -> None:
++    result = create_run_result("ok")
++
++    assert "final_output='ok'" in repr(result)
++
++
+ def test_run_result_streaming_supports_pydantic_model_rebuild() -> None:
+     class StreamingRunContainer(BaseModel):
+         query_id: str
+         run_stream: RunResultStreaming | None

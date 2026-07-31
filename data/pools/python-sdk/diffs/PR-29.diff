@@ -1,0 +1,21 @@
+diff --git a/src/mcp/server/validation.py b/src/mcp/server/validation.py
+index a281f4d08f22635ec8abfd956b334583d12f6363..4fbdd368feba80a1fd5249527c90777119faa0ba 100644
+--- a/src/mcp/server/validation.py
++++ b/src/mcp/server/validation.py
+@@ -16,15 +16,9 @@ def check_sampling_tools_capability(client_caps: ClientCapabilities | None) -> b
+ 
+     Returns:
+         True if client supports sampling.tools, False otherwise
+     """
+-    if client_caps is None:
+-        return False
+-    if client_caps.sampling is None:
+-        return False
+-    if client_caps.sampling.tools is None:
+-        return False
+-    return True
++    return bool(client_caps and client_caps.sampling and client_caps.sampling.tools)
+ 
+ 
+ def wants_sampling_tools(tools: list[Tool] | None, tool_choice: ToolChoice | None) -> bool:
+     """Whether a sampling request is tools-mode: `sampling.tools` gated, array-capable answer."""

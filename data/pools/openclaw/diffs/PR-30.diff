@@ -1,0 +1,18 @@
+diff --git a/packages/agent-core/src/harness/session/repo-utils.ts b/packages/agent-core/src/harness/session/repo-utils.ts
+--- a/packages/agent-core/src/harness/session/repo-utils.ts
++++ b/packages/agent-core/src/harness/session/repo-utils.ts
+@@ -1,4 +1,5 @@
+ // Agent Core helper module supports repo utils behavior.
++// Shared result and error plumbing for the session storage repositories.
+ import {
+   type FileError,
+   type Result,
+diff --git a/packages/agent-core/src/harness/session/storage-base.ts b/packages/agent-core/src/harness/session/storage-base.ts
+--- a/packages/agent-core/src/harness/session/storage-base.ts
++++ b/packages/agent-core/src/harness/session/storage-base.ts
+@@ -1,4 +1,5 @@
+ // Agent Core module implements storage base behavior.
++// Base class contract shared by the JSONL and in-memory session stores.
+ import {
+   type LeafEntry,
+   SessionError,

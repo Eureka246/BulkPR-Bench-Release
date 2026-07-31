@@ -1,0 +1,130 @@
+diff --git a/packages/provider-utils/src/streaming-tool-call-tracker.test.ts b/packages/provider-utils/src/streaming-tool-call-tracker.test.ts
+index adf9873c64..5a7121f90a 100644
+--- a/packages/provider-utils/src/streaming-tool-call-tracker.test.ts
++++ b/packages/provider-utils/src/streaming-tool-call-tracker.test.ts
+@@ -342,6 +342,67 @@ describe('StreamingToolCallTracker', () => {
+     });
+   });
+ 
++  describe('toolNameMapping', () => {
++    it('should normalize tool names before emitting stream parts', () => {
++      const { parts, controller } = createCollector();
++      const tracker = new StreamingToolCallTracker(controller, {
++        toolNameMapping: {
++          toProviderToolName: toolName => toolName,
++          toCustomToolName: toolName =>
++            toolName === 'provider_alias' ? 'custom-tool' : toolName,
++        },
++      });
++
++      tracker.processDelta({
++        id: 'call_1',
++        function: { name: 'provider_alias', arguments: '{}' },
++      });
++      tracker.flush();
++
++      expect(parts[0]).toMatchObject({
++        type: 'tool-input-start',
++        toolName: 'custom-tool',
++      });
++      expect(parts.at(-1)).toMatchObject({
++        type: 'tool-call',
++        toolName: 'custom-tool',
++      });
++    });
++
++    it('should normalize every configured provider alias', async () => {
++      const { parts, controller } = createCollector();
++      const { createToolNameMapping } =
++        await import('./create-tool-name-mapping');
++      const mapping = createToolNameMapping({
++        tools: [
++          {
++            type: 'provider',
++            id: 'anthropic.computer-use',
++            name: 'custom-computer-tool',
++            args: {},
++          },
++        ],
++        providerToolNames: {
++          'anthropic.computer-use': ['computer_use', 'computer_use_20250124'],
++        } as never,
++      });
++      const tracker = new StreamingToolCallTracker(controller, {
++        toolNameMapping: mapping,
++      });
++
++      tracker.processDelta({
++        id: 'call_1',
++        function: { name: 'computer_use_20250124', arguments: '{}' },
++      });
++      tracker.flush();
++
++      expect(parts.at(-1)).toMatchObject({
++        type: 'tool-call',
++        toolName: 'custom-computer-tool',
++      });
++    });
++  });
++
+   describe('flush', () => {
+     it('should finalize unfinished tool calls on flush', () => {
+       const { parts, controller } = createCollector();
+diff --git a/packages/provider-utils/src/streaming-tool-call-tracker.ts b/packages/provider-utils/src/streaming-tool-call-tracker.ts
+index 37cbfc09cc..04724eae32 100644
+--- a/packages/provider-utils/src/streaming-tool-call-tracker.ts
++++ b/packages/provider-utils/src/streaming-tool-call-tracker.ts
+@@ -3,6 +3,7 @@ import {
+   type LanguageModelV4StreamPart,
+   type SharedV4ProviderMetadata,
+ } from '@ai-sdk/provider';
++import type { ToolNameMapping } from './create-tool-name-mapping';
+ import { generateId as defaultGenerateId } from './generate-id';
+ 
+ /**
+@@ -51,6 +52,8 @@ export interface StreamingToolCallTrackerOptions<
+   buildToolCallProviderMetadata?: (
+     metadata: SharedV4ProviderMetadata | undefined,
+   ) => SharedV4ProviderMetadata | undefined;
++
++  toolNameMapping?: ToolNameMapping;
+ }
+ 
+ interface TrackedToolCall {
+@@ -90,7 +93,7 @@ export class StreamingToolCallTracker<
+ 
+   constructor(
+     controller: StreamingToolCallTrackerController,
+-    options: StreamingToolCallTrackerOptions<DELTA> = {},
++    private readonly options: StreamingToolCallTrackerOptions<DELTA> = {},
+   ) {
+     this.controller = controller;
+     this._generateId = options.generateId ?? defaultGenerateId;
+@@ -157,19 +160,23 @@ export class StreamingToolCallTracker<
+       });
+     }
+ 
++    const metadata = this.extractMetadata?.(toolCallDelta);
++    const toolName =
++      this.options.toolNameMapping?.toCustomToolName(
++        toolCallDelta.function.name,
++      ) ?? toolCallDelta.function.name;
++
+     this.controller.enqueue({
+       type: 'tool-input-start',
+       id: toolCallDelta.id,
+-      toolName: toolCallDelta.function.name,
++      toolName,
+     });
+ 
+-    const metadata = this.extractMetadata?.(toolCallDelta);
+-
+     this.toolCalls[index] = {
+       id: toolCallDelta.id,
+       type: 'function',
+       function: {
+-        name: toolCallDelta.function.name,
++        name: toolName,
+         arguments: toolCallDelta.function.arguments ?? '',
+       },
+       hasFinished: false,

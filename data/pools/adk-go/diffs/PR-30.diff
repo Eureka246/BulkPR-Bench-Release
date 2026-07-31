@@ -1,0 +1,127 @@
+diff --git a/session/event_output.go b/session/event_output.go
+new file mode 100644
+index 0000000..b42432f
+--- /dev/null
++++ b/session/event_output.go
+@@ -0,0 +1,41 @@
++// Copyright 2026 Google LLC
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//     http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++package session
++
++// EventOutput returns the explicit workflow output, or model text when the
++// event marks its message as output.
++func EventOutput(event *Event) (any, bool) {
++	if event == nil {
++		return nil, false
++	}
++	if event.Output != nil {
++		return event.Output, true
++	}
++	if event.NodeInfo == nil || !event.NodeInfo.MessageAsOutput {
++		return nil, false
++	}
++	content := event.LLMResponse.Content
++	if content == nil || content.Role != "model" {
++		return nil, false
++	}
++	var text []byte
++	for _, part := range content.Parts {
++		if part == nil || part.Text == "" || part.Thought {
++			continue
++		}
++		text = append(text, part.Text...)
++	}
++	return string(text), true
++}
+diff --git a/session/event_output_test.go b/session/event_output_test.go
+new file mode 100644
+index 0000000..88171bb
+--- /dev/null
++++ b/session/event_output_test.go
+@@ -0,0 +1,74 @@
++// Copyright 2026 Google LLC
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//     http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++package session
++
++import (
++	"testing"
++
++	"google.golang.org/genai"
++)
++
++func TestEventOutput(t *testing.T) {
++	explicit := &Event{Output: 42}
++	if got, ok := EventOutput(explicit); !ok || got != 42 {
++		t.Fatalf("explicit EventOutput() = (%v, %v), want (42, true)", got, ok)
++	}
++	message := &Event{NodeInfo: &NodeInfo{MessageAsOutput: true}}
++	message.LLMResponse.Content = &genai.Content{Role: "model", Parts: []*genai.Part{
++		{Text: "hidden", Thought: true}, {Text: "hello"}, {Text: " world"},
++	}}
++	if got, ok := EventOutput(message); !ok || got != "hello world" {
++		t.Fatalf("message EventOutput() = (%v, %v), want (hello world, true)", got, ok)
++	}
++	message.LLMResponse.Content = &genai.Content{Role: "user"}
++	if got, ok := EventOutput(message); ok || got != nil {
++		t.Fatalf("user EventOutput() = (%v, %v), want (nil, false)", got, ok)
++	}
++}
++
++func TestEventOutputPresenceRules(t *testing.T) {
++	tests := []struct {
++		name  string
++		event *Event
++		want  any
++		ok    bool
++	}{
++		{name: "nil event"},
++		{name: "no node metadata", event: &Event{}},
++		{
++			name:  "message flag without content",
++			event: &Event{NodeInfo: &NodeInfo{MessageAsOutput: true}},
++		},
++		{
++			name: "empty model message is present",
++			event: func() *Event {
++				event := &Event{NodeInfo: &NodeInfo{MessageAsOutput: true}}
++				event.LLMResponse.Content = &genai.Content{Role: "model"}
++				return event
++			}(),
++			want: "",
++			ok:   true,
++		},
++		{name: "explicit false", event: &Event{Output: false}, want: false, ok: true},
++	}
++	for _, test := range tests {
++		t.Run(test.name, func(t *testing.T) {
++			got, ok := EventOutput(test.event)
++			if ok != test.ok || got != test.want {
++				t.Fatalf("EventOutput() = (%v, %v), want (%v, %v)", got, ok, test.want, test.ok)
++			}
++		})
++	}
++}

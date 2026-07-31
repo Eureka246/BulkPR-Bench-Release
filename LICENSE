@@ -1,0 +1,36 @@
+MIT License
+
+Copyright (c) 2026 The BulkPR-Bench Authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
+
+Scope note. This MIT license covers the code in `bulkpr/` that we wrote.
+It does NOT cover two other things in this tree:
+
+  * Our original metadata and annotations (relation rules, oracle proofs,
+    projection schemas, evidence summaries) are licensed under CC BY 4.0.
+    See LICENSE-DATA.
+
+  * The code fragments inside `data/pools/*/diffs/*.diff` are derived from
+    upstream repositories and remain under the license of the repository they
+    came from. See NOTICE for the per-repository summary, REUSE.toml for the
+    machine-readable mapping, and third_party_licenses/upstream/ for verbatim
+    copies of each upstream license file.

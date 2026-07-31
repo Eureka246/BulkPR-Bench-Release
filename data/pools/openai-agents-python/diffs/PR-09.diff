@@ -1,0 +1,60 @@
+diff --git a/tests/test_agent_runner.py b/tests/test_agent_runner.py
+index 1be9148f9a458fe2d055217ec9f89514aead8b18..3b25d2214b18be7a8386b0f12b7b91e5b5cbf996 100644
+--- a/tests/test_agent_runner.py
++++ b/tests/test_agent_runner.py
+@@ -97,9 +97,15 @@ from .test_responses import (
+     get_text_input_item,
+     get_text_message,
+ )
+ from .utils.factories import make_run_state
+-from .utils.hitl import make_context_wrapper, make_model_and_agent, make_shell_call
++
++from .utils.hitl import (
++    HITL_REJECTION_MSG,
++    make_context_wrapper,
++    make_model_and_agent,
++    make_shell_call,
++)
+ from .utils.simple_session import CountingSession, IdStrippingSession, SimpleListSession
+ 
+ 
+ class _DummyRunItem:
+@@ -4768,9 +4774,11 @@ async def test_execute_approved_tools_with_rejected_tool():
+     )
+ 
+     # Should add rejection message
+     assert len(generated_items) == 1
+-    assert "not approved" in generated_items[0].output.lower()
++    assert (
++        generated_items[0].output == HITL_REJECTION_MSG
++    )
+     assert not tool_called  # Tool should not have been executed
+ 
+ 
+ @pytest.mark.asyncio
+@@ -4883,9 +4891,9 @@ async def test_execute_approved_tools_with_rejected_tool_formatter_none_uses_def
+         run_config=RunConfig(tool_error_formatter=lambda _args: None),
+     )
+ 
+     assert len(generated_items) == 1
+-    assert generated_items[0].output == "Tool execution was not approved."
++    assert generated_items[0].output == HITL_REJECTION_MSG
+ 
+ 
+ @pytest.mark.asyncio
+ async def test_execute_approved_tools_with_unclear_status():
+diff --git a/tests/utils/hitl.py b/tests/utils/hitl.py
+index 018159d334a0762b387737f39b09857649d8e3f6..9345cd3003324ff2835b74439adfdfea6d70a4df 100644
+--- a/tests/utils/hitl.py
++++ b/tests/utils/hitl.py
+@@ -13,9 +13,9 @@ from agents.run_internal.run_loop import NextStepInterruption, SingleStepResult
+ from agents.run_state import RunState as RunStateClass
+ 
+ from ..fake_model import FakeModel
+ 
+-HITL_REJECTION_MSG = "Tool execution was not approved."
++HITL_REJECTION_MSG = "Tool execution was rejected."
+ 
+ 
+ @dataclass
+ class ApprovalScenario:

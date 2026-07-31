@@ -1,0 +1,22 @@
+diff --git a/tests/model_settings/test_serialization.py b/tests/model_settings/test_serialization.py
+index ea59dc55f2cf4e5ad3ca80b6cf206c6e66ab8b9e..ec71e45e187a12a083566a6c04642c61462262cb 100644
+--- a/tests/model_settings/test_serialization.py
++++ b/tests/model_settings/test_serialization.py
+@@ -15,8 +15,17 @@ def verify_serialization(model_settings: ModelSettings) -> None:
+     json_string = json.dumps(json_dict)
+     assert json_string is not None
+ 
+ 
++
++def test_serialization_fixture_uses_explicit_defaults() -> None:
++    settings = ModelSettings(temperature=0.0, store=False)
++    serialized = settings.to_json_dict()
++
++    assert serialized["temperature"] == 0.0
++    assert serialized["store"] is False
++
++
+ def test_basic_serialization() -> None:
+     """Tests whether ModelSettings can be serialized to a JSON string."""
+ 
+     # First, lets create a ModelSettings instance

@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2026 The BulkPR-Bench authors
+# SPDX-License-Identifier: MIT
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.tox/
+
+# Everything the documentation tells you to generate.
+#
+# Keep these OUT of the tree: `bulkpr verify checksums` compares the tree against
+# CHECKSUMS.sha256 and reports anything extra, so a task tree built in place makes
+# the artifact's own self-check fail. README.md and docs/REPRODUCE.md write them
+# to /tmp for that reason; these entries are the safety net if you do not.
+/clones/
+/snapshots/
+/tasks/
+/jobs/
+score.json
+
+# Editors and operating systems
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/

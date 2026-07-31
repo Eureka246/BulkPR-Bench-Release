@@ -1,0 +1,47 @@
+diff --git a/libs/langgraph/langgraph/pregel/_retry.py b/libs/langgraph/langgraph/pregel/_retry.py
+index ecd485084..950ef194f 100644
+--- a/libs/langgraph/langgraph/pregel/_retry.py
++++ b/libs/langgraph/langgraph/pregel/_retry.py
+@@ -10,7 +10,7 @@ import weakref
+ from collections.abc import Awaitable, Callable, Sequence
+ from contextlib import suppress
+ from dataclasses import dataclass, replace
+-from datetime import datetime, timedelta, timezone
++from datetime import datetime, timezone
+ from typing import Any, Literal, NamedTuple
+ 
+ from langchain_core.callbacks import BaseCallbackHandler
+@@ -56,10 +56,6 @@ SUPPORTS_EXC_NOTES = sys.version_info >= (3, 11)
+ SUPPORTS_TASK_CANCELLING = sys.version_info >= (3, 11)
+ 
+ 
+-def _timeout_secs(value: float | timedelta) -> float:
+-    return value.total_seconds() if isinstance(value, timedelta) else value
+-
+-
+ @dataclass(frozen=True, slots=True)
+ class _ResolvedTimeout:
+     run_timeout_secs: float | None
+@@ -68,19 +64,11 @@ class _ResolvedTimeout:
+ 
+ 
+ def _resolve_timeout(timeout: TimeoutPolicy) -> _ResolvedTimeout:
+-    idle_timeout_secs = (
+-        _timeout_secs(timeout.idle_timeout)
+-        if timeout.idle_timeout is not None
+-        else None
+-    )
++    run_timeout_secs, idle_timeout_secs, refresh_on = timeout.as_seconds()
+     return _ResolvedTimeout(
+-        run_timeout_secs=(
+-            _timeout_secs(timeout.run_timeout)
+-            if timeout.run_timeout is not None
+-            else None
+-        ),
++        run_timeout_secs=run_timeout_secs,
+         idle_timeout_secs=idle_timeout_secs,
+-        refresh_on=timeout.refresh_on if idle_timeout_secs is not None else None,
++        refresh_on=refresh_on,
+     )
+ 
+ 

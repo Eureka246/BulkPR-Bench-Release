@@ -1,0 +1,28 @@
+diff --git a/workflow/agent_node_test.go b/workflow/agent_node_test.go
+index 0698eab..c59037c 100644
+--- a/workflow/agent_node_test.go
++++ b/workflow/agent_node_test.go
+@@ -599,18 +599,18 @@ func TestAgentNode_ValidationAndContentConversion(t *testing.T) {
+ 	}
+ }
+ 
+-// TestNodeInputToContent_TypedNilContent guards that a typed-nil
++// TestWorkflowInputToContent_TypedNilContent guards that a typed-nil
+ // *genai.Content is treated as nil input instead of panicking on v.Parts.
+-func TestNodeInputToContent_TypedNilContent(t *testing.T) {
++func TestWorkflowInputToContent_TypedNilContent(t *testing.T) {
+ 	var typedNil *genai.Content
+ 	var input any = typedNil // non-nil interface wrapping a nil *genai.Content
+ 
+-	got, err := nodeInputToContent(input)
++	got, err := workflowInputToContent(input)
+ 	if err != nil {
+-		t.Fatalf("nodeInputToContent returned error: %v", err)
++		t.Fatalf("workflowInputToContent returned error: %v", err)
+ 	}
+ 	if got != nil {
+-		t.Errorf("nodeInputToContent(typed-nil) = %#v, want nil", got)
++		t.Errorf("workflowInputToContent(typed-nil) = %#v, want nil", got)
+ 	}
+ }
+ 

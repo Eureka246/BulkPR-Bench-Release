@@ -1,0 +1,85 @@
+diff --git a/src/mcp/server/mcpserver/prompts/_listing.py b/src/mcp/server/mcpserver/prompts/_listing.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..4c98e54a2d41e02122b862166ac6b0395256b5d5
+--- /dev/null
++++ b/src/mcp/server/mcpserver/prompts/_listing.py
+@@ -0,0 +1,22 @@
++from mcp_types import Prompt as MCPPrompt
++from mcp_types import PromptArgument as MCPPromptArgument
++
++from mcp.server.mcpserver.prompts.base import Prompt
++
++
++def project_prompt(prompt: Prompt) -> MCPPrompt:
++    """Project an internal prompt onto the public listing type."""
++    return MCPPrompt(
++        name=prompt.name,
++        title=prompt.title,
++        description=prompt.description or None,
++        arguments=[
++            MCPPromptArgument(
++                name=argument.name,
++                description=argument.description,
++                required=argument.required,
++            )
++            for argument in (prompt.arguments or [])
++        ],
++        icons=prompt.icons,
++    )
+diff --git a/src/mcp/server/mcpserver/server.py b/src/mcp/server/mcpserver/server.py
+index 7fc1cd19488fdcf394ed59074ff0911d4ccb0a31..dc606ab2d880c57a2d535c932045e1f2dc7fb6bd 100644
+--- a/src/mcp/server/mcpserver/server.py
++++ b/src/mcp/server/mcpserver/server.py
+@@ -72,8 +72,9 @@ from mcp.server.lowlevel.server import LifespanResultT, Server
+ from mcp.server.lowlevel.server import lifespan as default_lifespan
+ from mcp.server.mcpserver.context import Context
+ from mcp.server.mcpserver.exceptions import ResourceError, ResourceNotFoundError
+ from mcp.server.mcpserver.prompts import Prompt, PromptManager
++from mcp.server.mcpserver.prompts._listing import project_prompt
+ from mcp.server.mcpserver.resources import (
+     DEFAULT_RESOURCE_SECURITY,
+     FunctionResource,
+     Resource,
+@@ -1234,26 +1235,9 @@ class MCPServer(Generic[LifespanResultT]):
+         )
+ 
+     async def list_prompts(self) -> list[MCPPrompt]:
+         """List all available prompts."""
+-        prompts = self._prompt_manager.list_prompts()
+-        return [
+-            MCPPrompt(
+-                name=prompt.name,
+-                title=prompt.title,
+-                description=prompt.description,
+-                arguments=[
+-                    MCPPromptArgument(
+-                        name=arg.name,
+-                        description=arg.description,
+-                        required=arg.required,
+-                    )
+-                    for arg in (prompt.arguments or [])
+-                ],
+-                icons=prompt.icons,
+-            )
+-            for prompt in prompts
+-        ]
++        return [project_prompt(prompt) for prompt in self._prompt_manager.list_prompts()]
+ 
+     async def get_prompt(
+         self, name: str, arguments: dict[str, Any] | None = None, context: Context[LifespanResultT, Any] | None = None
+     ) -> GetPromptResult | InputRequiredResult:
+diff --git a/tests/server/mcpserver/test_server.py b/tests/server/mcpserver/test_server.py
+index 3103a50f3877e168f39bf886a769fecd0ab83004..5a5660d0c16d397eae2a9b0ff1513dfba79db762 100644
+--- a/tests/server/mcpserver/test_server.py
++++ b/tests/server/mcpserver/test_server.py
+@@ -1396,9 +1396,9 @@ class TestServerPrompts:
+                 ListPromptsResult(
+                     prompts=[
+                         Prompt(
+                             name="fn",
+-                            description="",
++                            description=None,
+                             arguments=[
+                                 PromptArgument(name="name", required=True),
+                                 PromptArgument(name="optional", required=False),
+                             ],

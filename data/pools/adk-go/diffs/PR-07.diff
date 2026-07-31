@@ -1,0 +1,31 @@
+diff --git a/workflow/validation.go b/workflow/validation.go
+index 9743429..b7cd6b1 100644
+--- a/workflow/validation.go
++++ b/workflow/validation.go
+@@ -19,6 +19,7 @@ import (
+ 	"encoding/json"
+ 	"errors"
+ 	"fmt"
++	"reflect"
+ 	"slices"
+ 	"strings"
+ 
+@@ -253,12 +254,14 @@ func agentNodeMode(node Node) (llminternal.Mode, bool) {
+ // MultiRoute to express alternatives to the same target.
+ func validateUniqueEdges(workflow *graph) error {
+ 	for node, edges := range workflow.successors {
+-		uniqueEdges := make(map[Node]struct{})
++		uniqueEdges := make(map[Node][]Route)
+ 		for _, edge := range edges {
+-			if _, ok := uniqueEdges[edge.To]; ok {
+-				return fmt.Errorf("%w: from %q to %q", ErrDuplicateEdge, node.Name(), edge.To.Name())
++			for _, route := range uniqueEdges[edge.To] {
++				if reflect.DeepEqual(route, edge.Route) {
++					return fmt.Errorf("%w: from %q to %q", ErrDuplicateEdge, node.Name(), edge.To.Name())
++				}
+ 			}
+-			uniqueEdges[edge.To] = struct{}{}
++			uniqueEdges[edge.To] = append(uniqueEdges[edge.To], edge.Route)
+ 		}
+ 	}
+ 	return nil
